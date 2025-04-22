@@ -14,8 +14,8 @@ const uploadMiddleware = require("../middleware/uploadMiddleware");
 const router = express.Router();
 
 // Upload up to 5 images per car listing
-router.post("/", protect, uploadMiddleware("cars", true, 5), addCar);
-router.put("/:id", protect, uploadMiddleware("cars", true, 5), updateCar);
+router.post("/", protect, uploadMiddleware("cars", true, 20), addCar);
+router.put("/:id", protect, uploadMiddleware("cars", true, 20), updateCar);
 router.get("/uid/:id", getCarByUserId);
 router.get("/", getCars);
 router.get("/:id", getCarById);

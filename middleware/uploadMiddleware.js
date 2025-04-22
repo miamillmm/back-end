@@ -54,7 +54,7 @@ const fileFilter = (req, file, cb) => {
  * @param {number} maxFiles - Maximum number of files if multiple is true
  * @returns {multer.Middleware}
  */
-const uploadMiddleware = (folder, multiple = false, maxFiles = 10) => {
+const uploadMiddleware = (folder, multiple = false, maxFiles = 20) => {
   const upload = multer({
     storage: createStorage(folder),
     fileFilter,
