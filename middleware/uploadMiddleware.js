@@ -4,11 +4,11 @@ const fs = require("fs");
 
 /**
  * Function to create storage dynamically
- * @param {string} folder - The subfolder inside 'uploads/' (e.g., 'cars', 'messages')
+ * @param {string} folder - The subfolder inside 'Uploads/' (e.g., 'cars', 'messages')
  * @returns {multer.StorageEngine}
  */
 const createStorage = (folder) => {
-  const uploadDir = `uploads/${folder}/`;
+  const uploadDir = `Uploads/${folder}/`;
 
   // Ensure the folder exists
   if (!fs.existsSync(uploadDir)) {
@@ -54,10 +54,45 @@ const fileFilter = (req, file, cb) => {
  * @param {number} maxFiles - Maximum number of files if multiple is true
  * @returns {multer.Middleware}
  */
-const uploadMiddleware = (folder, multiple = false, maxFiles = 5) => {
-  const upload = multer({ storage: createStorage(folder), fileFilter });
+const uploadMiddleware = (folder, multiple = false, maxFiles = 10) => {
+  const upload = multer({
+    storage: createStorage(folder),
+    fileFilter,
+    limits: {
+      fileSize: 20 * 1024 * 1024, // 20MB per file
+      files: maxFiles, // Max files (default 10)
+    },
+  });
 
   return multiple ? upload.array("images", maxFiles) : upload.single("image");
+};
+
+// Handle multer errors
+const multerErrorHandler = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    // Multer-specific errors (e.g., file too large, too many files)
+    res.set({
+      'Access-Control-Allow-Origin': 'https://syriasouq.com',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    });
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'File too large (max 20MB)' });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ message: `Too many files (max ${err.limit})` });
+    }
+    return res.status(400).json({ message: err.message });
+  } else if (err) {
+    // Other errors (e.g., file type not allowed)
+    res.set({
+      'Access-Control-Allow-Origin': 'https://syriasouq.com',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    });
+    return res.status(400).json({ message: err.message });
+  }
+  next();
 };
 
 module.exports = uploadMiddleware;

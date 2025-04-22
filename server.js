@@ -30,6 +30,9 @@ app.use(express.json());
 //     exposedHeaders: ["Content-Range"],
 //   })
 // );
+
+app.use(express.json({ limit: '100mb' })); 
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(cors({
   origin: 'https://syriasouq.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
