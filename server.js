@@ -25,11 +25,16 @@ connectDB();
 
 app.use(express.json());
 // app.use(cors());
-app.use(
-  cors({
-    exposedHeaders: ["Content-Range"],
-  })
-);
+// app.use(
+//   cors({
+//     exposedHeaders: ["Content-Range"],
+//   })
+// );
+app.use(cors({
+  origin: 'https://syriasouq.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(morgan("dev"));
 app.use(cookieParser());
 
