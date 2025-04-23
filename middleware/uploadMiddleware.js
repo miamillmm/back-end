@@ -50,13 +50,9 @@ const uploadMiddleware = (folder, multiple = false, maxFiles = 20) => {
   const upload = multer({
     storage: createStorage(folder),
     fileFilter,
-      limits: {
-        fileSize: 20 * 1024 * 1024, // 20MB per file
-        files: maxFiles, // Max 20 files
-        fieldNameSize: 100, // Max field name length (in bytes)
-        fieldSize: 1024 * 1024, // Max field value size (1MB for non-file fields)
-        fields: 50, // Max number of non-file fields
-    
+    limits: {
+      fileSize: 20 * 1024 * 1024, // 20MB per file
+      files: maxFiles, // Max 20 files
     },
   });
 
