@@ -28,7 +28,7 @@ const addCar = async (req, res) => {
 
     // Handle image uploads
     const images = req.files ? req.files.map((file) => file.filename) : [];
-
+   console.log(images)
     // Convert features to an array if it's a string
     const parsedFeatures =
       typeof selectedFeatures === "string"
@@ -53,6 +53,7 @@ const addCar = async (req, res) => {
       description,
       images,
     });
+    console.log(car)
 
     await car.save();
 
