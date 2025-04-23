@@ -34,7 +34,7 @@ const addCar = async (req, res) => {
       typeof selectedFeatures === "string"
         ? JSON.parse(selectedFeatures)
         : selectedFeatures;
-
+  console.log("test")
     const car = new Car({
       user: req.user.id, // Ensure user is authenticated
       make,
