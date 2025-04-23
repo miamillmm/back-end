@@ -60,7 +60,7 @@ const uploadMiddleware = (folder, multiple = false, maxFiles = 20) => {
     },
   });
 
-  return multiple ? upload.array("images", maxFiles) : upload.single("image");
+  return multiple ? upload.fields("images", maxFiles) : upload.single("image");
 };
 
 // Handle multer errors
