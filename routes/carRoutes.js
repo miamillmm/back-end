@@ -1,6 +1,4 @@
 const express = require("express");
-const multer = require('multer');
-
 const {
   addCar,
   updateCar,
@@ -16,19 +14,8 @@ const uploadMiddleware = require("../middleware/uploadMiddleware");
 const router = express.Router();
 
 
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename(req, file, cb) {
-    cb(null, `${file.fieldname}-${Date.now()}`);
-  },
-});
-
-const upload = multer({ storage, limits: { fieldSize: 25 * 1024 * 1024 } });
-
 // Upload up to 5 images per car listing
-router.post("/", protect, upload.array('images'), addCar);
+router.post("/", protect, uploadMiddleware("cars", true, 20), addCar);
 router.put("/:id", protect, uploadMiddleware("cars", true, 20), updateCar);
 router.get("/uid/:id", getCarByUserId);
 router.get("/", getCars);
