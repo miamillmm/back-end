@@ -33,7 +33,7 @@ connectDB();
 app.use(express.json({ limit: '100mb' })); 
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(cors({
-  origin: ['https://syriasouq.com','http://localhost:5173'],
+  origin: ['https://syriasouq.com','http://localhost:5173','https://admin.syriasouq.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
