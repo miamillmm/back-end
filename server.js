@@ -11,6 +11,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const wishlistRoutes = require("./routes/wishlistRoutes");
 const conversationRoutes = require("./routes/conversationRoutes"); // NEW
 const contactRoutes = require("./routes/contactRoutes"); // NEW
+const reportRoutes = require("./routes/reportRoutes"); // NEW
 const errorHandler = require("./middleware/errorMiddleware");
 const http = require("http");
 const { initializeSocket } = require("./socket");
@@ -48,6 +49,7 @@ app.use("/api/conversations", conversationRoutes); // NEW
 app.use("/api/messages", messageRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/report", reportRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

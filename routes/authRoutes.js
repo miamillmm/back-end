@@ -5,6 +5,8 @@ const {
   logoutUser,
   handleForgotPassword,
   handleChangePassword,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
 const { check } = require("express-validator");
 
@@ -24,7 +26,7 @@ const validateRegister = [
 router.post("/register", validateRegister, registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
-router.post("/forgot-password", handleForgotPassword);
-router.post("/change-password", handleChangePassword);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

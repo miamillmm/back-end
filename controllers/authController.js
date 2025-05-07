@@ -3,6 +3,9 @@ const { forgotPasswordEmailTemplate } = require("../services/emailTemplates");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const crypto = require('crypto');
+const { default: mongoose } = require("mongoose");
+const { default: axios } = require("axios");
 
 // Generate JWT Token
 const generateToken = (res, userId) => {
@@ -159,11 +162,206 @@ const handleChangePassword = async (req, res) => {
     });
   }
 };
+const PasswordResetToken = mongoose.model('PasswordResetToken', new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  otpHash: { type: String, required: true },
+  expiresAt: { type: Date, required: true },
+}));
 
+// Rate limiter: 5 requests per hour per phone number
+// const rateLimiter = new RateLimiterMemory({
+//   points: 5,
+//   duration: 3600, // 1 hour
+// });
+
+// Generate a 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit number
+};
+
+// Hash OTP using SHA-256
+const hashOTP = (otp) => {
+  return crypto.createHash('sha256').update(otp).digest('hex');
+};
+
+// const forgotPassword = async (req, res) => {
+//   const { phone } = req.body;
+
+//   if (!phone) {
+//     return res.status(400).json({ message: 'Phone number is required' });
+//   }
+
+//   try {
+//     // Apply rate limiting
+//     // await rateLimiter.consume(phone).catch(() => {
+//     //   return res.status(429).json({ message: 'Too many requests. Please try again later.' });
+//     // });
+
+//     // Find user by phone number
+//     const user = await User.findOne({ phone });
+//     if (!user) {
+//       // Generic response to prevent user enumeration
+//       return res.status(200).json({ message: 'If a matching account exists, an OTP has been sent via WhatsApp.' });
+//     }
+//     console.log(user)
+//     // Generate OTP
+//     const otp = generateOTP();
+//     const otpHash = hashOTP(otp);
+//     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+//     // Store hashed OTP in the database
+//     await PasswordResetToken.create({
+//       userId: user._id,
+//       otpHash,
+//       expiresAt,
+//     });
+
+//     // Send WhatsApp message via WaAPI
+//     const waapiResponse = await axios.post(
+//       'https://waapi.app/api/v1/instances/64935/client/action/send-message',
+//       {
+//         // device: process.env.WAAPI_DEVICE,
+//         // device: process.env.WAAPI_DEVICE,
+//         chatId: `923091905410@c.us`,
+//         // chatId: `${phone}@c.us!`,
+//         message: `Your OTP to reset your password is: ${otp}\nThis OTP will expire in 10 minutes.`,
+//       },
+//       {
+//         headers: {
+//           'Authorization': `Bearer GUVTytxjRztaQMHie8T6iu3cCvXIkoDhat2ss6s8c0a97c23`,
+//           'Content-Type': 'application/json',
+//         },
+//       }
+//     );
+//     console.log(waapiResponse)
+//     if (waapiResponse.status !== 200) {
+//       throw new Error('Failed to send WhatsApp message');
+//     }
+
+//     res.status(200).json({ message: 'If a matching account exists, an OTP has been sent via WhatsApp.' });
+//   } catch (error) {
+//     console.error('Forgot Password Error:', error);
+//     res.status(500).json({ message: 'Failed to process request. Please try again.' });
+//   }
+// };
+
+
+const forgotPassword = async (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone) {
+    return res.status(400).json({ message: 'Phone number is required' });
+  }
+
+  try {
+    // Apply rate limiting (uncomment if needed)
+    // await rateLimiter.consume(phone).catch(() => {
+    //   return res.status(429).json({ message: 'Too many requests. Please try again later.' });
+    // });
+
+    // Find user by phone number
+    const user = await User.findOne({ phone });
+    if (!user) {
+      // Generic response to prevent user enumeration
+      return res.status(200).json({ message: 'If a matching account exists, an OTP has been sent via WhatsApp.' });
+    }
+    console.log(user);
+
+    // Check for existing PasswordResetToken for the user
+    const existingToken = await PasswordResetToken.findOne({ userId: user._id });
+    if (existingToken) {
+      // Option 1: Delete the existing token
+      await PasswordResetToken.deleteOne({ userId: user._id });
+      // Option 2: Alternatively, you could update the existing token (uncomment if preferred)
+      // existingToken.otpHash = hashOTP(generateOTP());
+      // existingToken.expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+      // await existingToken.save();
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpHash = hashOTP(otp);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store hashed OTP in the database
+    await PasswordResetToken.create({
+      userId: user._id,
+      otpHash,
+      expiresAt,
+    });
+
+    // Send WhatsApp message via WaAPI
+    const waapiResponse = await axios.post(
+      'https://waapi.app/api/v1/instances/64935/client/action/send-message',
+      {
+        chatId: `${phone}@c.us`, // Use the user's phone number
+        message: `Your OTP to reset your password is: ${otp}\nThis OTP will expire in 10 minutes.`,
+      },
+      {
+        headers: {
+          Authorization: `Bearer GUVTytxjRztaQMHie8T6iu3cCvXIkoDhat2ss6s8c0a97c23`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    console.log(waapiResponse);
+
+    if (waapiResponse.status !== 200) {
+      throw new Error('Failed to send WhatsApp message');
+    }
+
+    res.status(200).json({ message: 'If a matching account exists, an OTP barges been sent via WhatsApp.' });
+  } catch (error) {
+    console.error('Forgot Password Error:', error);
+    res.status(500).json({ message: 'Failed to process request. Please try again.' });
+  }
+};
+const resetPassword = async (req, res) => {
+  const { phone, otp, newPassword } = req.body;
+
+  if (!phone || !otp || !newPassword) {
+    return res.status(400).json({ message: 'Phone number, OTP, and new password are required' });
+  }
+
+  try {
+    // Find OTP in the database
+    const otpHash = hashOTP(otp);
+    const resetToken = await PasswordResetToken.findOne({
+      otpHash,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!resetToken) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // Find user by phone number
+    const user = await User.findOne({ phone });
+    if (!user || user._id.toString() !== resetToken.userId.toString()) {
+      return res.status(400).json({ message: 'Invalid request' });
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    // Delete the used OTP
+    await PasswordResetToken.deleteOne({ otpHash });
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset Password Error:', error);
+    res.status(500).json({ message: 'Failed to reset password. Please try again.' });
+  }
+};
+
+module.exports = { forgotPassword, resetPassword };
 module.exports = {
   registerUser,
   loginUser,
+  resetPassword,
   logoutUser,
   handleForgotPassword,
   handleChangePassword,
+  forgotPassword
 };
