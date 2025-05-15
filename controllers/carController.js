@@ -233,8 +233,7 @@ const updateCar = async (req, res) => {
       ? JSON.parse(req.body.features)
       : car.features;
     car.description = req.body.description || car.description;
-    car.status = 'pending'; // Reset status to pending for admin approval
-
+    car.status = req.body.status || car.status;
     // Update images if new ones are uploaded
     if (req.files && req.files.length > 0) {
       car.images = req.files.map((file) => file.filename);
