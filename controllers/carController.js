@@ -367,6 +367,28 @@ const getCarByUserId = async (req, res) => {
   }
 };
 
+const getCarsByUserId = async (req, res) => {
+  try {
+    const cars = await Car.find({ user: req.params.id }).populate(
+      "user",
+      "username email"
+    );
+
+    if (cars.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No cars found for this user" });
+    }
+
+    res.json({ success: true, data: cars });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error?.message || "Internal Server Error",
+    });
+  }
+};
+
 // @desc    Delete a car listing
 // @route   DELETE /api/cars/:id
 const deleteCar = async (req, res) => {
@@ -412,4 +434,5 @@ module.exports = {
   getCars,
   getCarById,
   getCarByUserId,
+  getCarsByUserId
 };
