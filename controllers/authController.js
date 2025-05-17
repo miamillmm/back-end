@@ -4,20 +4,56 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require('crypto');
+const multer = require("multer");
+const path = require("path");
 const { default: mongoose } = require("mongoose");
 const { default: axios } = require("axios");
+
+const fs = require("fs");
+
+
+// // Multer Configuration
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     console.log(req.user)
+//     const userId = req.user._id; // From JWT middleware
+//     const userDir = path.join(__dirname, "uploads", "users", userId);
+//     // Create user-specific directory if it doesn't exist
+//     if (!fs.existsSync(userDir)) {
+//       fs.mkdirSync(userDir, { recursive: true });
+//     }
+//     cb(null, userDir);
+//   },
+//   filename: (req, file, cb) => {
+//     const ext = path.extname(file.originalname);
+//     cb(null, `profile-${Date.now()}${ext}`);
+//   },
+// });
+
+// const upload = multer({
+//   storage,
+//   fileFilter: (req, file, cb) => {
+//     if (!file.mimetype.startsWith("image/")) {
+//       return cb(new Error("Only images are allowed"));
+//     }
+//     cb(null, true);
+//   },
+//   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+// });
 
 // Generate JWT Token
 const generateToken = (res, userId) => {
   const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+    // expiresIn: "7d",
+    expiresIn: "365d", // or "365d"
+    });
 
   res.cookie("jwt", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    // maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
   });
 
   return token;
@@ -56,6 +92,37 @@ const registerUser = async (req, res) => {
   }
 };
 
+
+
+// Upload Image Endpoint
+ const imageUpload= async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image uploaded" });
+    }
+
+    const imageUrl = `/uploads/users/${req.file.filename}`;
+
+    // Delete old image if it exists
+    const user = await User.findById(req.user._id);
+    if (user?.profileImage) {
+      const oldImagePath = path.join(__dirname, user.profileImage);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    // Update user with new profile image
+    const result=await User.findByIdAndUpdate(req.user._id, { profileImage: imageUrl });
+    console.log(result)
+
+    res.status(200).json({ message: "Image uploaded successfully", imageUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error uploading image" });
+  }
+};
+
 // @desc    Login user & set token
 // @route   POST /api/auth/login
 const loginUser = async (req, res) => {
@@ -70,6 +137,7 @@ const loginUser = async (req, res) => {
         username: user.username,
         phone: user.phone,
         role: user.role,
+        profileImage:user.profileImage,
         jwt,
       });
     } else {
@@ -362,6 +430,7 @@ module.exports = {
   resetPassword,
   logoutUser,
   handleForgotPassword,
+  imageUpload,
   handleChangePassword,
   forgotPassword
 };

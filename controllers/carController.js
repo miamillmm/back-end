@@ -370,7 +370,7 @@ const getCarsByUserId = async (req, res) => {
   try {
     const cars = await Car.find({ user: req.params.id }).populate(
       "user",
-      "username email"
+     "username phone profileImage"
     );
 
     if (cars.length === 0) {
